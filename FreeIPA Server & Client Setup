@@ -3,7 +3,7 @@ FreeIPA Server & Client Setup
 This guide provides a clear step-by-step process for setting up FreeIPA with DNS integration on a Fedora server.
 
 Requirement:
-Fedora Server + FQDN
+Fedora Server + FQDN 
 
 Fedora 38 
 FreeIpa version: 4.10.2
