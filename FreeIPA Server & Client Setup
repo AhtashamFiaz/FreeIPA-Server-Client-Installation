@@ -1,0 +1,124 @@
+FreeIPA Server & Client Setup
+
+This guide provides a clear step-by-step process for setting up FreeIPA with DNS integration on a Fedora server.
+
+Requirement:
+Fedora Server + FQDN
+
+Fedora 38 
+FreeIpa version: 4.10.2
+
+Change Hostname:
+hostname freeipa.shuftiapps.com
+
+Edit /etc/hosts:
+Add an entry for your server's IP and domain name:
+
+Allow Ports in the Firewall:
+firewall-cmd --permanent --add-port={80/tcp,443/tcp,389/tcp,636/tcp,88/tcp,464/tcp,53/tcp,88/udp,464/udp,53/udp,123/udp}
+firewall-cmd --reload
+
+Install FreeIPA Server with DNS:
+dnf install freeipa-server-dns
+
+Start FreeIPA Installation with DNS and Allow Zone Overlap:
+ipa-server-install --setup-dns --allow-zone-overlap
+
+If the httpd service fails to start, manually start it:
+systemctl start httpd.service
+		Set NTP (Network Time Protocol) Servers:
+		Add the NTP servers as prompted during the FreeIPA setup.
+		Set Passwords:
+		Set passwords for the Directory Manager and the Admin user as prompted during the setup.
+Add Firewall Rules for FreeIPA and DNS services:
+firewall-cmd --add-service freeipa-4 --permanent
+firewall-cmd --add-service dns --permanent
+firewall-cmd --reload
+
+Check the Status of FreeIPA:
+ipactl status
+
+Access the FreeIPA Web Interface:
+Access the FreeIPA web interface by entering the domain name 
+
+Note on DNS Configuration:
+Depending on your server's network setup (local VM or dedicated public IP), you may need to modify the /etc/hosts file on the local computer or server to ensure DNS resolution.
+
+
+
+FreeIPA Client Setup 
+
+Prerequisites
+A FreeIPA Server that the client will join
+Sudo access to the server or user with sudo access
+Internet access from the sever
+1. Update system
+Ensure that the system packages are updated
+sudo apt update
+sudo apt upgrade
+
+2. Installing FreeIPA packages
+FreeIPA client is available on repositories for Ubuntu. Install it using the command:
+sudo apt install -y freeipa-client
+Confirm client addition using this command
+apt-cache policy freeipa-client
+
+2. Seting up client
+sudo nano etc/hosts
+10.2.40.149 ipa.citizix.com      // freeipa server ip and domain name 
+10.2.40.70 ubuntu-client.citizix.com. // client ip and FQDN hostname
+
+Set your system hostname.
+sudo hostnamectl set-hostname  hostname.domain.com
+
+Update the timezone to your timezone:
+Check time zone of FreeIPA server 
+Then match your client time zone 
+
+timedatectl 
+sudo timedatectl set-timezone Asia/Karachi
+
+We can then setup client with specifying FreeIPA server and domain name
+Replace server with your freeipa server hostname and domain with your domain name 
+
+sudo ipa-client-install --server=ipa.citizix.com --domain ipa.citizix.com
+
+Proceed with fixed values and no DNS discovery? 
+Yes
+Do you want to configure chrony with NTP server or pool address? [no]: no
+Continue to configure the system with these values? [no]: yes
+
+3. Enable Creation of home directories on the first Login
+sudo bash -c "cat > /usr/share/pam-configs/mkhomedir" <<EOF
+
+Name: activate mkhomedir
+Default: yes
+Priority: 900
+Session-Type: Additional
+Session:
+required pam_mkhomedir.so umask=0022 skel=/etc/skel
+EOF
+
+Then run:
+sudo pam-auth-update
+
+Ensure  “activate mkhomedir” is selected, it should have [*]. Select .
+
+4. Test Client addition
+To test that the client was added successfully, let us login with a user in freeipa. If its the first time you are logging in, you should see a password change prompt else you will see this:
+ssh isa-client@ip
+Exit
+
+You can administer FreeIPA Server from the client machine using ipa command line tool.
+kinit admin
+
+Test by adding a user account and listing accounts present:
+sudo ipa user-add kip \
+     --first=Kipkoech \
+     --last=Towett \
+     --email=kip@citizix.com \
+     --password
+Verify.
+ ipa user-find kip
+  
+
